@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Sejarah Pergerakan Nasional</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for better aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7; /* Light background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .quiz-container {
+            max-width: 700px;
+            width: 95%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        .option-button {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: left;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border: 2px solid #e5e7eb;
+            user-select: none;
+        }
+        .option-button:hover:not(.selected) {
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        /* States for Answer Checking */
+        .correct {
+            background-color: #d1fae5; /* Light green */
+            border-color: #10b981; /* Green border */
+            font-weight: 600;
+        }
+        .incorrect {
+            background-color: #fee2e2; /* Light red */
+            border-color: #ef4444; /* Red border */
+            font-weight: 600;
+        }
+        .selected:not(.correct):not(.incorrect) {
+            background-color: #bfdbfe; /* Light blue (selected but not checked) */
+            border-color: #3b82f6;
+        }
+        /* Style for the Rationale box */
+        .rationale-box {
+            border-left: 4px solid #3b82f6;
+            background-color: #eff6ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Progress Bar Styling */
+        .progress-bar {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #10b981; /* Green color */
+            transition: width 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+<div id="quizApp" class="quiz-container">
+    <div class="p-8">
+        <!-- Header & Progress -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Kuis Sejarah Kelas XI SMK</h1>
+        <p id="subTitle" class="text-sm text-gray-500 mb-6">Tokoh dan Latar Belakang Pergerakan Nasional</p>
+
+        <!-- Main Quiz Area -->
+        <div id="quizContent">
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+            </div>
+            
+            <!-- Question Number -->
+            <p id="qNumber" class="text-lg font-semibold text-indigo-600 mb-4"></p>
+
+            <!-- Question Text -->
+            <div id="questionText" class="text-xl font-semibold mb-6 text-gray-800"></div>
+
+            <!-- Options Container -->
+            <div id="optionsContainer">
+                <!-- Options will be injected here -->
+            </div>
+
+            <!-- Rationale Box (Hidden initially) -->
+            <div id="rationaleBox" class="rationale-box hidden">
+                <p class="font-bold text-blue-800 mb-1">Penjelasan:</p>
+                <p id="rationaleText" class="text-sm text-blue-700"></p>
+            </div>
+
+            <!-- Hint Box (Optional, based on original data) -->
+            <div id="hintBox" class="mt-4 p-3 bg-yellow-50 text-yellow-800 border-l-4 border-yellow-500 rounded hidden">
+                <p class="font-medium">Petunjuk:</p>
+                <p id="hintText" class="text-sm"></p>
+            </div>
+        </div>
+
+        <!-- Navigation and Actions -->
+        <div id="actionArea" class="mt-8 flex justify-between">
+            <button id="checkButton" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition duration-150 disabled:bg-gray-400" disabled>
+                Cek Jawaban
+            </button>
+            <button id="nextButton" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 hidden">
+                Lanjut &rarr;
+            </button>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="resultScreen" class="text-center py-10 hidden">
+            <h2 class="text-4xl font-extrabold text-gray-800 mb-4">Quiz Selesai!</h2>
+            <p class="text-2xl text-gray-600 mb-6">Skor Akhir Anda:</p>
+            <p id="finalScore" class="text-6xl font-extrabold text-green-600 mb-8">0/10</p>
+            <p id="saveStatus" class="mt-4 text-sm font-medium text-gray-600">
+                <!-- Status penyimpanan skor akan ditampilkan di sini -->
+            </p>
+            <button id="retryButton" class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition duration-150 shadow-lg">
+                Coba Lagi
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data Quiz dalam format yang sudah disederhanakan dari input sebelumnya
+    // Catatan: Struktur data ini disesuaikan dari JSON yang Anda berikan agar mudah diolah di JavaScript.
+    const quizDataRaw = {"Oj":[{"oEa":0,"question":"Faktor internal utama yang mendorong munculnya kesadaran berbangsa dan berdirinya organisasi pergerakan nasional di Indonesia pada awal abad ke-20 adalah...","hint":"Fokus pada apa yang terjadi di dalam masyarakat Indonesia sendiri sebagai akibat kebijakan kolonial Belanda.","oD":[{"text":"Kemenangan Jepang atas Rusia tahun 1905.","xy":false,"K$":"Ini adalah faktor eksternal yang memicu semangat negara-negara Asia, bukan faktor internal yang berasal dari dalam negeri Indonesia."},{"text":"Masuknya paham-paham baru dari Eropa seperti liberalisme dan demokrasi.","xy":false,"K$":"Paham-paham baru dari Eropa dikategorikan sebagai faktor eksternal pendorong pergerakan nasional."},{"text":"Munculnya kaum terpelajar akibat Politik Etis dan penderitaan rakyat akibat penjajahan.","xy":true,"K$":"Politik Etis memunculkan golongan terpelajar yang menyadari kondisi bangsanya, yang kemudian menjadi pemimpin pergerakan. Ini adalah faktor internal utama."},{"text":"Adanya Perang Dunia I yang melemahkan posisi negara-negara Eropa.","xy":false,"K$":"Perang Dunia I merupakan faktor eksternal yang baru terjadi setelah organisasi pergerakan nasional awal mulai berdiri."}]},{"oEa":0,"question":"Organisasi pergerakan nasional pertama yang didirikan pada tanggal 20 Mei 1908 oleh Dr. Soetomo dan para mahasiswa STOVIA adalah...","hint":"Nama organisasi ini memiliki arti 'Budi yang Utama' dan menjadi tonggak Hari Kebangkitan Nasional.","oD":[{"text":"Sarekat Islam","xy":false,"K$":"Sarekat Islam didirikan pada tahun 1911 (sebagai Sarekat Dagang Islam) dan fokus awalnya di bidang perdagangan."},{"text":"Indische Partij","xy":false,"K$":"Indische Partij didirikan pada tahun 1912 dan merupakan organisasi politik pertama yang secara terang-terangan menuntut kemerdekaan."},{"text":"Perhimpunan Indonesia","xy":false,"K$":"Perhimpunan Indonesia (awalnya Indische Vereeniging) didirikan di Belanda dan kemudian menjadi motor gerakan non-kooperatif di luar negeri."},{"text":"Budi Utomo","xy":true,"K$":"Budi Utomo adalah organisasi modern pertama, didirikan oleh Dr. Soetomo dan mahasiswa STOVIA, dengan fokus awal di bidang sosial dan budaya."}]},{"oEa":0,"question":"Salah satu ciri utama organisasi pergerakan nasional yang bersifat **non-kooperatif** adalah...","hint":"Kata 'non-kooperatif' berarti 'tidak bekerja sama'. Pikirkan implikasinya terhadap hubungan dengan Belanda.","oD":[{"text":"Bersedia bekerja sama dengan pemerintah kolonial Belanda untuk mencapai tujuan.","xy":false,"K$":"Ini adalah ciri dari organisasi yang bersifat kooperatif, bukan non-kooperatif."},{"text":"Hanya berjuang melalui jalur pendidikan dan budaya, menghindari politik.","xy":false,"K$":"Sifat non-kooperatif lebih merujuk pada penolakan kerja sama politik dan pemerintahan dengan Belanda."},{"text":"Menolak bekerja sama dengan pemerintah kolonial dan berjuang secara mandiri di luar Volksraad.","xy":true,"K$":"Organisasi non-kooperatif berpegang pada prinsip tidak mau berpartisipasi atau bekerja sama dengan pemerintahan Belanda."},{"text":"Fokus pada peningkatan ekonomi rakyat melalui koperasi dan usaha dagang.","xy":false,"K$":"Ini lebih menekankan pada bidang perjuangan (ekonomi), bukan sifat hubungan dengan pemerintah kolonial."}]},{"oEa":0,"question":"Siapakah tokoh yang dikenal sebagai pendiri organisasi **Indische Partij** bersama dengan Dr. Cipto Mangunkusumo dan Suwardi Suryaningrat (Ki Hajar Dewantara), yang kemudian dikenal sebagai 'Tiga Serangkai'?","hint":"Salah satu dari Tiga Serangkai ini merupakan seorang Indo-Belanda yang gigih membela pribumi.","oD":[{"text":"Dr. Soetomo","xy":false,"K$":"Dr. Soetomo adalah pendiri Budi Utomo."},{"text":"H.O.S. Cokroaminoto","xy":false,"K$":"H.O.S. Cokroaminoto adalah pemimpin utama Sarekat Islam."},{"text":"Mohammad Hatta","xy":false,"K$":"Mohammad Hatta merupakan tokoh Perhimpunan Indonesia dan PNI Baru, serta proklamator."},{"text":"E.F.E. Douwes Dekker (Danudirja Setiabudi)","xy":true,"K$":"E.F.E. Douwes Dekker, bersama Cipto dan Suwardi, mendirikan Indische Partij yang berani mengkritik pemerintah kolonial."}]},{"oEa":0,"question":"Organisasi yang awalnya merupakan perkumpulan pedagang Islam yang didirikan oleh Haji Samanhudi, kemudian berkembang pesat menjadi organisasi massa yang dipimpin oleh H.O.S. Cokroaminoto dengan basis keagamaan dan sosial-ekonomi adalah...","hint":"Perhatikan kata kunci 'pedagang Islam'.","oD":[{"text":"Partai Nasional Indonesia (PNI)","xy":false,"K$":"PNI didirikan oleh Soekarno dan berfokus pada perjuangan politik non-kooperatif menuju Indonesia merdeka."},{"text":"Budi Utomo","xy":false,"K$":"Budi Utomo berfokus pada sosial-budaya dan pendidikan, bukan perdagangan Islam."},{"text":"Sarekat Islam (SI)","xy":true,"K$":"Sarekat Islam (awalnya Sarekat Dagang Islam) didirikan untuk melindungi kepentingan pedagang pribumi dari dominasi Tionghoa dan menjadi organisasi massa besar."},{"text":"Indische Partij","xy":false,"K$":"Indische Partij adalah organisasi politik pertama yang radikal, bukan organisasi perdagangan."}]},{"oEa":0,"question":"Latar belakang eksternal yang sangat memengaruhi perkembangan pergerakan nasional Indonesia karena memberikan contoh bahwa bangsa Asia dapat mengalahkan bangsa kulit putih (Eropa) adalah...","hint":"Perhatikan konflik militer di mana negara Asia memenangkan pertempuran melawan negara Eropa pada awal abad ke-20.","oD":[{"text":"Revolusi Prancis","xy":false,"K$":"Revolusi Prancis menyebarkan ide-ide liberalisme dan nasionalisme, tetapi tidak secara langsung memberikan contoh kemenangan Asia atas Eropa."},{"text":"Perang Dunia II","xy":false,"K$":"Perang Dunia II terjadi setelah pergerakan nasional sudah matang, dan bukan pemicu awalnya."},{"text":"Perang Rusia-Jepang (1904-1905)","xy":true,"K$":"Kemenangan Jepang atas Rusia menghancurkan mitos superioritas bangsa Eropa dan memberikan inspirasi bagi negara-negara terjajah di Asia."},{"text":"Berkembangnya komunisme di Cina","xy":false,"K$":"Perkembangan komunisme di Cina tidak memiliki dampak psikologis sekuat kemenangan Jepang atas negara imperialis besar Eropa."}]},{"oEa":0,"question":"Tokoh pergerakan nasional yang terkenal dengan gagasannya tentang **nationale zelfstandigheid** (kemandirian bangsa) dan mendirikan Partai Nasional Indonesia (PNI) pada tahun 1927 adalah...","hint":"Tokoh ini kelak menjadi Proklamator dan Presiden pertama Republik Indonesia.","oD":[{"text":"Ki Hajar Dewantara","xy":false,"K$":"Ki Hajar Dewantara fokus pada pendidikan dan mendirikan Taman Siswa."},{"text":"Sutan Syahrir","xy":false,"K$":"Sutan Syahrir adalah tokoh PNI Baru dan lebih fokus pada kaderisasi."},{"text":"Dr. Wahidin Sudirohusodo","xy":false,"K$":"Dr. Wahidin adalah penggagas ide beasiswa yang menginspirasi pendirian Budi Utomo."},{"text":"Soekarno","xy":true,"K$":"Soekarno adalah pendiri PNI dan pemimpin kharismatik yang mendorong semangat persatuan untuk mencapai kemerdekaan."}]},{"oEa":0,"question":"Dalam konteks sejarah pergerakan nasional, apa yang dimaksud dengan **Politik Etis** yang diterapkan oleh Pemerintah Kolonial Belanda?","hint":"Cari tahu siapa pencetusnya dan apa program utamanya, yang sering disebut sebagai 'Trias Van Deventer'.","oD":[{"text":"Aturan yang mengharuskan semua perkebunan milik Belanda mempekerjakan buruh pribumi.","xy":false,"K$":"Politik Etis adalah kebijakan balas budi, bukan regulasi ketenagakerjaan secara umum."},{"text":"Kebijakan balas budi Belanda yang meliputi program irigasi, emigrasi, dan edukasi bagi rakyat Hindia Belanda.","xy":true,"K$":"Politik Etis (Ethische Politiek) adalah janji balas budi yang diprakarsai oleh Van Deventer dengan fokus pada Trias Van Deventer (Edukasi, Irigasi, Transmigrasi)."},{"text":"Sistem tanam paksa (Cultuurstelsel) yang diberlakukan di seluruh Jawa.","xy":false,"K$":"Tanam Paksa adalah sistem eksploitasi yang sangat merugikan rakyat, berlawanan dengan semangat balas budi Politik Etis."},{"text":"Upaya untuk mengindoktrinasi rakyat pribumi dengan ideologi komunisme.","xy":false,"K$":"Pemerintah kolonial sangat menentang komunisme; ini adalah kebijakan yang terkait dengan kesejahteraan, bukan ideologi terlarang."}]},{"oEa":0,"question":"Sifat perjuangan organisasi pergerakan nasional pada periode tahun 1920-an, seperti Partai Nasional Indonesia (PNI), umumnya digolongkan sebagai perjuangan **radikal** atau non-kooperatif. Alasan utama Belanda bersikap keras terhadap organisasi-organisasi ini adalah karena...","hint":"Fokus pada apa yang paling mengancam kedaulatan dan keberlanjutan kekuasaan kolonial Belanda.","oD":[{"text":"Organisasi tersebut hanya fokus pada kegiatan sosial dan budaya.","xy":false,"K$":"Organisasi yang fokus di sosial-budaya seperti Budi Utomo tidak diperlakukan sekeras organisasi politik radikal."},{"text":"Mereka secara terbuka menolak kerja sama dan menuntut kemerdekaan penuh (Indonesia Merdeka).","xy":true,"K$":"Sikap non-kooperatif dan tuntutan kemerdekaan penuh dianggap ancaman langsung terhadap kekuasaan kolonial Belanda."},{"text":"Mereka didominasi oleh tokoh-tokoh dari golongan priayi Jawa.","xy":false,"K$":"Latar belakang sosial tokoh bukan alasan utama tindakan keras, melainkan ideologi perjuangannya."},{"text":"Organisasi tersebut hanya diisi oleh kaum terpelajar dari luar negeri.","xy":false,"K$":"Meskipun ada tokoh lulusan luar negeri, banyak juga pemimpin yang merupakan produk sekolah di Hindia Belanda."}]},{"oEa":0,"question":"Sumpah Pemuda pada 28 Oktober 1928 memiliki arti yang sangat penting bagi Pergerakan Nasional Indonesia, terutama karena...","hint":"Perhatikan tiga poin utama yang dijanjikan oleh para pemuda dalam kongres tersebut.","oD":[{"text":"Merupakan pengakuan Belanda terhadap bahasa Indonesia sebagai bahasa resmi.","xy":false,"K$":"Sumpah Pemuda adalah janji pemuda, bukan pengakuan resmi dari pemerintah kolonial Belanda."},{"text":"Mewujudkan persatuan seluruh organisasi politik di bawah satu wadah perjuangan.","xy":false,"K$":"Sumpah Pemuda lebih menekankan pada persatuan pemuda dan ide kebangsaan (satu nusa, satu bangsa, satu bahasa), bukan fusi organisasi politik."},{"text":"Menegaskan cita-cita akan 'satu tanah air, satu bangsa, dan satu bahasa' yaitu Indonesia.","xy":true,"K$":"Sumpah Pemuda adalah kristalisasi dari ideologi nasionalisme yang melintasi batas-batas kesukuan dan kedaerahan menjadi satu kesatuan Indonesia."},{"text":"Melakukan perlawanan bersenjata pertama secara terorganisir melawan Belanda.","xy":false,"K$":"Pergerakan yang melahirkan Sumpah Pemuda adalah perjuangan diplomasi dan organisasi, bukan perlawanan bersenjata."}]}]}
+
+    // Transform raw data to a more usable format
+    const questions = quizDataRaw.Oj.map(item => ({
+        question: item.question,
+        hint: item.hint,
+        options: item.oD.map(option => ({
+            text: option.text,
+            isCorrect: option.xy,
+            rationale: option['K$']
+        }))
+    }));
+    
+    // State variables
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let isAnswered = false;
+    let selectedOptionIndex = null;
+    
+    // !!! PENTING: GANTI URL DI BAWAH INI !!!
+    // Ganti placeholder ini dengan URL Aplikasi Web Google Apps Script yang sudah Anda deploy.
+    const GAS_WEB_APP_URL = 'GANTI_DENGAN_URL_GOOGLE_APPS_SCRIPT_ANDA';
+
+    // DOM Elements
+    const quizContent = document.getElementById('quizContent');
+    const resultScreen = document.getElementById('resultScreen');
+    const questionText = document.getElementById('questionText');
+    const qNumber = document.getElementById('qNumber');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const checkButton = document.getElementById('checkButton');
+    const nextButton = document.getElementById('nextButton');
+    const rationaleBox = document.getElementById('rationaleBox');
+    const rationaleText = document.getElementById('rationaleText');
+    const hintBox = document.getElementById('hintBox');
+    const hintText = document.getElementById('hintText');
+    const finalScore = document.getElementById('finalScore');
+    const progressBar = document.getElementById('progressBar');
+    const saveStatus = document.getElementById('saveStatus');
+    const totalQuestions = questions.length;
+
+    /**
+     * Mengirim skor akhir ke Google Spreadsheet melalui Google Apps Script.
+     */
+    async function submitScoreToSheet(finalScoreValue, totalQuestionsValue) {
+        saveStatus.textContent = 'Mengirim skor ke server...';
+        saveStatus.classList.remove('text-red-500', 'text-green-600');
+        saveStatus.classList.add('text-gray-600');
+
+        if (GAS_WEB_APP_URL === 'GANTI_DENGAN_URL_GOOGLE_APPS_SCRIPT_ANDA') {
+            saveStatus.textContent = 'ERROR: URL Apps Script belum diatur. Skor tidak disimpan.';
+            saveStatus.classList.remove('text-gray-600');
+            saveStatus.classList.add('text-red-500');
+            return;
+        }
+
+        const payload = {
+            score: finalScoreValue,
+            total: totalQuestionsValue
+        };
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'cors', // Penting untuk komunikasi lintas domain
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'Success') {
+                saveStatus.textContent = '✅ Skor berhasil disimpan ke Google Sheet!';
+                saveStatus.classList.remove('text-gray-600');
+                saveStatus.classList.add('text-green-600');
+            } else {
+                throw new Error(result.message || 'Gagal menyimpan skor.');
+            }
+
+        } catch (error) {
+            console.error('Submission Error:', error);
+            saveStatus.textContent = `❌ Gagal menyimpan skor: ${error.message}`;
+            saveStatus.classList.remove('text-gray-600');
+            saveStatus.classList.add('text-red-500');
+        }
+    }
+
+
+    /**
+     * Menampilkan pertanyaan saat ini ke layar.
+     */
+    function displayQuestion() {
+        if (currentQuestionIndex >= totalQuestions) {
+            showResults();
+            return;
+        }
+
+        const currentQuestion = questions[currentQuestionIndex];
+        
+        // Reset view for new question
+        optionsContainer.innerHTML = '';
+        rationaleBox.classList.add('hidden');
+        nextButton.classList.add('hidden');
+        checkButton.disabled = true;
+        checkButton.classList.remove('hidden');
+        isAnswered = false;
+        selectedOptionIndex = null;
+        saveStatus.textContent = ''; // Clear save status
+
+        // Update progress bar
+        const progress = ((currentQuestionIndex) / totalQuestions) * 100;
+        progressBar.style.width = `${progress}%`;
+
+        // Update question text and number
+        qNumber.textContent = `Pertanyaan ${currentQuestionIndex + 1} dari ${totalQuestions}`;
+        questionText.innerHTML = currentQuestion.question;
+        
+        // Update hint
+        hintText.textContent = currentQuestion.hint;
+        hintBox.classList.remove('hidden'); // Show hint by default
+
+        // Create option buttons
+        currentQuestion.options.forEach((option, index) => {
+            const button = document.createElement('div');
+            button.className = 'option-button text-gray-700 hover:text-gray-900';
+            button.textContent = option.text;
+            button.setAttribute('data-index', index);
+            button.onclick = () => selectOption(button, index);
+            optionsContainer.appendChild(button);
+        });
+    }
+
+    /**
+     * Menangani pemilihan opsi jawaban.
+     * @param {HTMLElement} selectedButton - Tombol opsi yang dipilih.
+     * @param {number} index - Indeks opsi yang dipilih.
+     */
+    function selectOption(selectedButton, index) {
+        if (isAnswered) return;
+
+        // Deselect all other options
+        optionsContainer.querySelectorAll('.option-button').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+
+        // Select the current option
+        selectedButton.classList.add('selected');
+        selectedOptionIndex = index;
+        checkButton.disabled = false;
+    }
+
+    /**
+     * Menangani pengecekan jawaban yang dipilih.
+     */
+    function checkAnswer() {
+        if (selectedOptionIndex === null || isAnswered) return;
+
+        isAnswered = true;
+        checkButton.classList.add('hidden');
+        nextButton.classList.remove('hidden');
+        hintBox.classList.add('hidden'); // Hide hint after checking
+
+        const currentQuestion = questions[currentQuestionIndex];
+        const selectedOption = currentQuestion.options[selectedOptionIndex];
+        const optionButtons = optionsContainer.querySelectorAll('.option-button');
+        const selectedButton = optionButtons[selectedOptionIndex];
+        let correctOptionRationale = '';
+
+        // Highlight correct and incorrect answers
+        optionButtons.forEach((btn, index) => {
+            const option = currentQuestion.options[index];
+            if (option.isCorrect) {
+                btn.classList.add('correct');
+                correctOptionRationale = option.rationale;
+            } else if (index === selectedOptionIndex && !option.isCorrect) {
+                btn.classList.add('incorrect');
+            }
+            // Disable all buttons
+            btn.onclick = null;
+        });
+
+        // Update score and rationale
+        if (selectedOption.isCorrect) {
+            score++;
+        }
+
+        rationaleText.textContent = correctOptionRationale;
+        rationaleBox.classList.remove('hidden');
+    }
+
+    /**
+     * Pindah ke pertanyaan berikutnya.
+     */
+    function nextQuestion() {
+        currentQuestionIndex++;
+        displayQuestion();
+    }
+
+    /**
+     * Menampilkan hasil akhir kuis dan mengirim skor.
+     */
+    function showResults() {
+        quizContent.classList.add('hidden');
+        document.getElementById('actionArea').classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        finalScore.textContent = `${score}/${totalQuestions}`;
+        
+        // Final progress update
+        progressBar.style.width = `100%`;
+
+        // Panggil fungsi untuk mengirim skor
+        submitScoreToSheet(score, totalQuestions);
+    }
+
+    /**
+     * Memulai ulang kuis.
+     */
+    function resetQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        isAnswered = false;
+        selectedOptionIndex = null;
+        quizContent.classList.remove('hidden');
+        document.getElementById('actionArea').classList.remove('hidden');
+        resultScreen.classList.add('hidden');
+        checkButton.classList.remove('hidden');
+        nextButton.classList.add('hidden');
+        saveStatus.textContent = ''; // Clear save status
+        displayQuestion();
+    }
+
+    // Event Listeners
+    checkButton.addEventListener('click', checkAnswer);
+    nextButton.addEventListener('click', nextQuestion);
+    document.getElementById('retryButton').addEventListener('click', resetQuiz);
+
+    // Initialize the quiz when the page loads
+    window.onload = displayQuestion;
+</script>
+
+</body>
+</html>
